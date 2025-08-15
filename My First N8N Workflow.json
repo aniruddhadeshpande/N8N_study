@@ -1,0 +1,280 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "basicAuth",
+        "formTitle": "Submit Request",
+        "formDescription": "Submit Test Request",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name",
+              "placeholder": "Enter Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "placeholder": "Enter Email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Password",
+              "fieldType": "password",
+              "placeholder": "Your Password",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "File Upload",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".pdf,.png.jpg",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3076b979-22f4-4aaa-91a7-7fa0fd2cf031",
+      "name": "Form",
+      "webhookId": "db54077d-01c8-44a0-8a5a-db70d2bf07d2",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "iSi4WvqHsMzTJJwU",
+          "name": "Form Trigger"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "fe5d6615-dc90-40f5-98d5-d575f7f19e29",
+                    "leftValue": "={{ $json['File Upload'].mimetype }}",
+                    "rightValue": "application/pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PDF"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "31d5e921-aa3f-4206-81fa-d767cf828e4a",
+                    "leftValue": "={{ $json['File Upload'].mimetype }}",
+                    "rightValue": "image/jpeg",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "JPEG"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "6c17ed62-08be-4ad9-9b9b-9643ada0f684",
+                    "leftValue": "={{ $json['File Upload'].mimetype }}",
+                    "rightValue": "image/png",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PNG"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        192,
+        -16
+      ],
+      "id": "14b431ce-1223-4ff2-9c70-e9dd0a85382a",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "=File_Upload",
+        "options": {
+          "maxPages": 200
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        400,
+        -128
+      ],
+      "id": "2c874eca-8eb2-4467-b0c1-88118fdbeeff",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Write a message to \n {{ $('Form').item.json.Name }}\n\nAnd summarize PDF text in bullet points \n{{ $json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        608,
+        -128
+      ],
+      "id": "c1a89c5e-e444-4f0b-9823-d688c802e36d",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "GQR2CmA3jfEP2q3C",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Form').item.json.Email }}",
+        "subject": "Analysis ",
+        "message": "={{ $json.message.content }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1056,
+        -32
+      ],
+      "id": "e1164cc7-567e-4004-96b4-14c4410c51fb",
+      "name": "Send a message",
+      "webhookId": "cf8951af-20c9-4385-bda9-4e25de4bee9b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "0cWwcbL1e3YwY666",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Form": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6764ff3a-a2f8-48df-84b0-e1fee55a2c06",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "76239cadb665b99530c63d4f1bd46b1c95ce358d8fb295ff7f50929f264497bf"
+  },
+  "id": "k7trDGzbfdzbu8vb",
+  "tags": []
+}
